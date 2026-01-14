@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { db } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import { GAME_ID, THEME } from "../constants";
 
 export default function Display() {
   const [timeLeft, setTimeLeft] = useState("15:00");
@@ -8,25 +9,25 @@ export default function Display() {
   const timerRef = useRef(null);
 
   const formatTime = (ms) => {
-    if (ms <= 0) return "00:00";
-    const mins = Math.floor(ms / 60000);
-    const secs = Math.floor((ms % 60000) / 1000);
-    return `${mins.toString().padStart(2, "0")}:${secs
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const mins = Math.floor(totalSeconds / 60)
       .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, "0");
+    const secs = (totalSeconds % 60).toString().padStart(2, "0");
+    return `${mins}:${secs}`;
   };
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "games", "poker-night"), (snapshot) => {
+    const unsub = onSnapshot(doc(db, "games", GAME_ID), (snapshot) => {
       const data = snapshot.data();
       if (!data) return;
+
       setStatus(data.status);
       if (timerRef.current) clearInterval(timerRef.current);
 
       if (data.status === "running" && data.endTime) {
         timerRef.current = setInterval(() => {
-          const now = Date.now();
-          const diff = data.endTime - now;
+          const diff = data.endTime - Date.now();
           if (diff <= 0) {
             setTimeLeft("00:00");
             clearInterval(timerRef.current);
@@ -38,47 +39,52 @@ export default function Display() {
         setTimeLeft(formatTime(data.remainingTime));
       }
     });
+
     return () => {
       unsub();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  const getClockColor = () => {
-    if (status === "running") return "text-emerald-500";
-    if (status === "paused") return "text-yellow-500"; // Yellow for Paused
-    return "text-orange-500"; // Orange for Ready
+  // Professional style mapping to bypass Tailwind compilation issues
+  const theme = THEME[status];
+
+  // We map the theme keys to actual HEX values for safety
+  const colorMap = {
+    emerald: "#10b981",
+    yellow: "#eab308",
+    orange: "#f97316",
   };
 
-  const getBadgeStyles = () => {
-    if (status === "running")
-      return "border-emerald-500/50 bg-emerald-500/10 text-emerald-500";
-    if (status === "paused")
-      return "border-yellow-500/50 bg-yellow-500/10 text-yellow-500"; // Yellow Badge
-    return "border-orange-500/50 bg-orange-500/10 text-orange-500";
-  };
-
-  const getStatusLabel = () => {
-    if (status === "running") return "Game Live";
-    if (status === "paused") return "Timer Paused";
-    return "Ready to Start";
-  };
+  const activeColor = colorMap[theme.color];
 
   return (
     <div className="h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
       <div className="text-zinc-600 text-2xl font-bold uppercase tracking-[0.5em] mb-4">
         Tournament Clock
       </div>
+
+      {/* Clock - Using inline style for guaranteed color rendering */}
       <h1
-        className={`text-[30vw] font-mono font-black leading-none transition-colors duration-700 ${getClockColor()}`}
+        style={{ color: activeColor }}
+        className="text-[30vw] font-mono font-black leading-none transition-colors duration-700"
       >
         {timeLeft}
       </h1>
+
+      {/* Status Badge - Using inline styles for border and background glow */}
       <div
-        className={`mt-8 px-10 py-3 border-2 rounded-full transition-all duration-500 ${getBadgeStyles()}`}
+        style={{
+          borderColor: `${activeColor}80`, // 80 adds 50% transparency
+          backgroundColor: `${activeColor}1a`, // 1a adds ~10% transparency
+        }}
+        className="mt-8 px-10 py-3 border-2 rounded-full transition-all duration-500"
       >
-        <span className="font-bold uppercase tracking-[0.3em] text-xl">
-          {getStatusLabel()}
+        <span
+          style={{ color: activeColor }}
+          className="font-bold uppercase tracking-[0.3em] text-xl"
+        >
+          {theme.label}
         </span>
       </div>
     </div>
