@@ -1,46 +1,62 @@
 import { db } from "../firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 
 export default function Controller() {
   const startTimer = async () => {
-    const durationInMinutes = 15;
-    const endTime = Date.now() + durationInMinutes * 60 * 1000;
+    const durationMs = 15 * 60 * 1000;
+    const endTime = Date.now() + durationMs;
 
-    try {
-      // This saves the data to a document called "poker-night"
-      await setDoc(doc(db, "games", "poker-night"), {
-        endTime: endTime,
-        status: "running",
+    await setDoc(doc(db, "games", "poker-night"), {
+      endTime: endTime,
+      remainingTime: durationMs,
+      status: "running",
+    });
+  };
+
+  const togglePause = async () => {
+    const docRef = doc(db, "games", "poker-night");
+    const snap = await getDoc(docRef);
+    const data = snap.data();
+
+    if (data.status === "running") {
+      // PAUSING: Calculate how much time is left right now and save it
+      const remaining = data.endTime - Date.now();
+      await updateDoc(docRef, {
+        status: "paused",
+        remainingTime: remaining,
       });
-      alert("Timer Started!");
-    } catch (e) {
-      console.error("Error starting timer: ", e);
+    } else {
+      // RESUMING: Create a NEW endTime based on the saved remainingTime
+      const newEndTime = Date.now() + data.remainingTime;
+      await updateDoc(docRef, {
+        status: "running",
+        endTime: newEndTime,
+      });
     }
   };
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-white font-sans">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-black tracking-tighter">
-          POKER<span className="text-orange-500">CONTROL</span>
-        </h1>
-        <p className="text-zinc-500 uppercase tracking-widest text-xs mt-2">
-          Mobile Remote
-        </p>
-      </div>
+      <h1 className="text-2xl font-bold mb-8 text-zinc-400">POKER CONTROL</h1>
 
       <button
         onClick={startTimer}
-        className="w-64 h-64 bg-orange-500 rounded-full text-black font-black text-4xl shadow-[0_0_50px_rgba(249,115,22,0.3)] active:scale-95 transition-all border-8 border-orange-600/50 flex items-center justify-center"
+        className="w-64 h-64 bg-orange-500 rounded-full text-black font-black text-4xl mb-8"
       >
         START
       </button>
 
-      <div className="mt-12 grid grid-cols-2 gap-4 w-full max-w-xs">
-        <button className="bg-zinc-800 py-4 rounded-2xl font-bold text-zinc-400">
-          PAUSE
+      <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
+        <button
+          onClick={togglePause}
+          className="bg-zinc-800 py-6 rounded-2xl font-bold text-xl active:bg-zinc-700"
+        >
+          PAUSE / RESUME
         </button>
-        <button className="bg-zinc-800 py-4 rounded-2xl font-bold text-zinc-400">
+        <button
+          onClick={startTimer}
+          className="bg-zinc-800 py-6 rounded-2xl font-bold text-xl active:bg-zinc-700"
+        >
           RESET
         </button>
       </div>
