@@ -46,17 +46,7 @@ export default function Display() {
     };
   }, []);
 
-  // Professional style mapping to bypass Tailwind compilation issues
   const theme = THEME[status];
-
-  // We map the theme keys to actual HEX values for safety
-  const colorMap = {
-    emerald: "#10b981",
-    yellow: "#eab308",
-    orange: "#f97316",
-  };
-
-  const activeColor = colorMap[theme.color];
 
   return (
     <div className="h-screen bg-black flex flex-col items-center justify-center overflow-hidden">
@@ -64,26 +54,16 @@ export default function Display() {
         Tournament Clock
       </div>
 
-      {/* Clock - Using inline style for guaranteed color rendering */}
       <h1
-        style={{ color: activeColor }}
-        className="text-[30vw] font-mono font-black leading-none transition-colors duration-700"
+        className={`text-[30vw] font-mono font-black leading-none transition-colors duration-700 ${theme.text}`}
       >
         {timeLeft}
       </h1>
 
-      {/* Status Badge - Using inline styles for border and background glow */}
       <div
-        style={{
-          borderColor: `${activeColor}80`, // 80 adds 50% transparency
-          backgroundColor: `${activeColor}1a`, // 1a adds ~10% transparency
-        }}
-        className="mt-8 px-10 py-3 border-2 rounded-full transition-all duration-500"
+        className={`mt-8 px-10 py-3 border-2 rounded-full transition-all duration-500 ${theme.border} ${theme.bg} ${theme.text}`}
       >
-        <span
-          style={{ color: activeColor }}
-          className="font-bold uppercase tracking-[0.3em] text-xl"
-        >
+        <span className="font-bold uppercase tracking-[0.3em] text-xl">
           {theme.label}
         </span>
       </div>
