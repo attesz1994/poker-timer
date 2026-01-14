@@ -1,5 +1,5 @@
 export const GAME_ID = "poker-night";
-export const DURATION_MS = 15 * 60 * 1000;
+export const DURATION_MS = 1 * 60 * 1000;
 
 export const THEME = {
   running: {
@@ -25,3 +25,14 @@ export const THEME = {
   },
   reset: { hex: "#dc2626" },
 };
+
+export const BLIND_STRUCTURE = [
+  { level: 1, small: 25, big: 50 },
+  { level: 2, small: 50, big: 100 },
+  { level: 3, small: 75, big: 150 },
+  { level: 4, small: 100, big: 200 },
+  { level: 5, small: 150, big: 300 },
+  { level: 6, small: 200, big: 400 },
+  { level: 7, small: 300, big: 600 },
+  { level: 8, small: 400, big: 800 },
+];
