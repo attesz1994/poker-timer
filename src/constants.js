@@ -27,12 +27,19 @@ export const THEME = {
 };
 
 export const BLIND_STRUCTURE = [
-  { level: 1, small: 25, big: 50 },
-  { level: 2, small: 50, big: 100 },
-  { level: 3, small: 75, big: 150 },
-  { level: 4, small: 100, big: 200 },
-  { level: 5, small: 150, big: 300 },
-  { level: 6, small: 200, big: 400 },
-  { level: 7, small: 300, big: 600 },
-  { level: 8, small: 400, big: 800 },
+  { level: 1, small: 50, big: 100, type: "level" },
+  { level: 2, small: 100, big: 200, type: "level" },
+  { level: 3, small: 150, big: 300, type: "level" },
+  { level: "BREAK", small: 0, big: 0, type: "break" }, // First Break
+  { level: 4, small: 200, big: 400, type: "level" },
+  { level: 5, small: 300, big: 600, type: "level" },
+  { level: 6, small: 400, big: 800, type: "level" },
+  { level: "BREAK", small: 0, big: 0, type: "break" }, // Second Break (Color-up)
+  { level: 7, small: 500, big: 1000, type: "level" },
+  { level: 8, small: 600, big: 1200, type: "level" },
+  { level: 9, small: 800, big: 1600, type: "level" },
+  { level: "BREAK", small: 0, big: 0, type: "break" }, // Third Break (Final Table)
+  { level: 10, small: 1000, big: 2000, type: "level" },
+  { level: 11, small: 1500, big: 3000, type: "level" },
+  { level: 12, small: 2000, big: 4000, type: "level" },
 ];
