@@ -4,12 +4,11 @@ import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { GAME_ID, THEME, BLIND_STRUCTURE, DURATION_MS } from "../constants";
 
 export default function Display() {
-  const [timeLeft, setTimeLeft] = useState("01:00");
+  const [timeLeft, setTimeLeft] = useState("15:00");
   const [status, setStatus] = useState("stopped");
   const [level, setLevel] = useState(0);
   const timerRef = useRef(null);
 
-  // Helper to turn milliseconds into MM:SS format
   const formatTime = (ms) => {
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
     const mins = Math.floor(totalSeconds / 60)
@@ -19,54 +18,47 @@ export default function Display() {
     return `${mins}:${secs}`;
   };
 
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "games", GAME_ID), (snapshot) => {
       const data = snapshot.data();
       if (!data) return;
-
       setStatus(data.status);
       setLevel(data.currentLevel || 0);
 
-      // Clean up any existing intervals before starting a new one
       if (timerRef.current) clearInterval(timerRef.current);
 
       if (data.status === "running" && data.endTime) {
         timerRef.current = setInterval(async () => {
-          const now = Date.now();
-          const diff = data.endTime - now;
-
+          const diff = data.endTime - Date.now();
           if (diff <= 0) {
-            // STOP the current timer locally
             clearInterval(timerRef.current);
-
-            // LOGIC: Check if we can advance to the next level
             const nextLevelIndex = (data.currentLevel || 0) + 1;
-
             if (nextLevelIndex < BLIND_STRUCTURE.length) {
-              // Automatically Update Firebase to the next level and restart clock
               await updateDoc(doc(db, "games", GAME_ID), {
                 currentLevel: nextLevelIndex,
                 endTime: Date.now() + DURATION_MS,
                 remainingTime: DURATION_MS,
               });
             } else {
-              // If no more levels remain, stop the game at 00:00
               setTimeLeft("00:00");
-              await updateDoc(doc(db, "games", GAME_ID), {
-                status: "stopped",
-              });
+              await updateDoc(doc(db, "games", GAME_ID), { status: "stopped" });
             }
           } else {
-            // Normal countdown update
             setTimeLeft(formatTime(diff));
           }
         }, 100);
       } else {
-        // When paused or stopped, show the static remaining time
         setTimeLeft(formatTime(data.remainingTime));
       }
     });
-
     return () => {
       unsub();
       if (timerRef.current) clearInterval(timerRef.current);
@@ -76,35 +68,18 @@ export default function Display() {
   const theme = THEME[status];
   const blinds = BLIND_STRUCTURE[level];
 
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error(
-          `Error attempting to enable full-screen mode: ${err.message}`
-        );
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
   return (
-    <div className="h-screen bg-black flex flex-col items-center justify-between p-20 overflow-hidden font-sans">
-      {/* Full Screen Toggle Button - Hidden by default, shows on hover */}
-      {/* Full Screen Toggle Button */}
+    <div className="h-screen w-screen bg-black flex flex-col items-center justify-between overflow-hidden font-sans relative px-12">
+      {/* Visible Fullscreen Toggle Button */}
       <button
         onClick={toggleFullScreen}
-        style={{
-          backgroundColor: "#27272a", // Zinc-800
-          zIndex: 50,
-        }}
-        className="absolute top-8 right-8 p-4 rounded-xl border border-white/20 text-white transition-all hover:scale-110 active:scale-95 shadow-lg flex items-center justify-center"
-        title="Toggle Full Screen"
+        className="absolute top-8 right-8 z-50 p-4 rounded-2xl bg-zinc-900/50 border border-white/10 text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all shadow-2xl"
+        title="Toggle Fullscreen"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="28"
-          height="28"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -116,44 +91,49 @@ export default function Display() {
         </svg>
       </button>
 
-      {/* Top Header */}
-      <div className="text-zinc-700 text-2xl font-bold uppercase tracking-[0.5em] text-center w-full">
+      {/* Header */}
+      <div className="pt-12 text-zinc-700 text-xl font-bold uppercase tracking-[1em]">
         Tournament Clock
       </div>
 
-      {/* Main Clock Section */}
-      <div className="flex flex-col items-center">
+      {/* Main Clock Area */}
+      <div className="flex-grow flex flex-col items-center justify-center w-full">
         <h1
-          className={`text-[32vw] font-mono font-black leading-none transition-colors duration-700 ${theme.text}`}
+          /* Use inline style to ensure the change is applied */
+          style={{ fontSize: "20vh" }}
+          className={`font-mono font-black leading-none tracking-tighter transition-colors duration-700 ${theme.text}`}
         >
           {timeLeft}
         </h1>
 
-        {/* Status Badge */}
         <div
-          className={`mt-4 px-10 py-3 border-2 rounded-full transition-all duration-500 ${theme.border} ${theme.bg} ${theme.text}`}
+          className={`mt-4 px-10 py-2 border-2 rounded-full transition-all duration-500 bg-black ${theme.border} ${theme.text}`}
         >
-          <span className="font-bold uppercase tracking-[0.3em] text-2xl">
+          <span className="font-bold uppercase tracking-[0.4em] text-xl">
             {theme.label}
           </span>
         </div>
       </div>
 
-      {/* Bottom Blinds Section */}
-      <div className="flex justify-between items-end w-full border-t border-white/10 pt-10">
-        <div className="text-left">
-          <p className="text-zinc-500 uppercase tracking-widest text-xl mb-2 font-semibold">
+      {/* Bottom Info Bar - Balanced using vh for vertical consistency */}
+      <div className="w-full flex justify-between items-end pb-16 pt-8 border-t border-white/5">
+        <div className="flex flex-col">
+          <p className="text-zinc-600 uppercase tracking-widest text-lg font-bold mb-2">
             Level
           </p>
-          <h2 className="text-white text-9xl font-black">{blinds.level}</h2>
+          <h2 className="text-white text-[15vh] font-black leading-none">
+            {blinds.level}
+          </h2>
         </div>
 
-        <div className="text-right">
-          <p className="text-zinc-500 uppercase tracking-widest text-xl mb-2 font-semibold">
-            Blinds
+        <div className="flex flex-col items-end">
+          <p className="text-zinc-600 uppercase tracking-widest text-lg font-bold mb-2">
+            Current Blinds
           </p>
-          <h2 className="text-white text-9xl font-black">
-            {blinds.small} <span className="text-zinc-700">/</span> {blinds.big}
+          <h2 className="text-white text-[15vh] font-black leading-none tracking-tighter">
+            {blinds.small}
+            <span className="text-zinc-800 mx-4">/</span>
+            {blinds.big}
           </h2>
         </div>
       </div>
