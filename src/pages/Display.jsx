@@ -76,8 +76,46 @@ export default function Display() {
   const theme = THEME[status];
   const blinds = BLIND_STRUCTURE[level];
 
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message}`
+        );
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
     <div className="h-screen bg-black flex flex-col items-center justify-between p-20 overflow-hidden font-sans">
+      {/* Full Screen Toggle Button - Hidden by default, shows on hover */}
+      {/* Full Screen Toggle Button */}
+      <button
+        onClick={toggleFullScreen}
+        style={{
+          backgroundColor: "#27272a", // Zinc-800
+          zIndex: 50,
+        }}
+        className="absolute top-8 right-8 p-4 rounded-xl border border-white/20 text-white transition-all hover:scale-110 active:scale-95 shadow-lg flex items-center justify-center"
+        title="Toggle Full Screen"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="28"
+          height="28"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M15 3h6v6M9 21H3v-6M21 15v6h-6M3 9V3h6" />
+        </svg>
+      </button>
+
       {/* Top Header */}
       <div className="text-zinc-700 text-2xl font-bold uppercase tracking-[0.5em] text-center w-full">
         Tournament Clock
